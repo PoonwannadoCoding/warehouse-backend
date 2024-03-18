@@ -17,6 +17,7 @@ func Init() {
 	app.GET("/all/order", getAllOrder)
 	app.GET("/order/:id", getOrder)
 	app.POST("/add/product", postProduct)
+	app.POST("/add/customer", postCustomer)
 
 	app.Run()
 
@@ -42,6 +43,15 @@ func postProduct(c *gin.Context) {
 	c.JSON(200, gin.H{
 		"message": newProduct,
 	})
+}
+
+func postCustomer(c *gin.Context) {
+	var customer model.Customer
+
+	if err := c.BindJSON(&customer); err != nil {
+		return
+	}
+	InsertCustomer(customer)
 
 }
 

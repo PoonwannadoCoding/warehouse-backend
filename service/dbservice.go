@@ -44,6 +44,7 @@ func InsertProduct(product model.Product) {
 	if err != nil {
 		fmt.Println("Error at insert product", err.Error())
 	}
+	defer db.Close()
 	defer insert.Close()
 
 }
@@ -55,6 +56,7 @@ func GetAllProduct() []model.Product {
 		fmt.Println("Error querying database:", err.Error())
 		return nil
 	}
+	defer db.Close()
 	defer products.Close()
 
 	productList := []model.Product{}
@@ -80,7 +82,7 @@ func GetAllOrder() []model.Order {
 		fmt.Println("Error querying database:", err.Error())
 		return nil
 	}
-
+	defer db.Close()
 	defer results.Close()
 
 	orderList := []model.Order{}
@@ -104,6 +106,7 @@ func GetOrder(id string) *model.Order {
 		fmt.Println("Error querying database order: ", err.Error())
 		return nil
 	}
+	defer db.Close()
 	defer results.Close()
 
 	order := &model.Order{}
@@ -126,6 +129,7 @@ func GetProduct(id string) *model.Product {
 		fmt.Println("Error querying database:", err.Error())
 		return nil
 	}
+	defer db.Close()
 	defer product.Close()
 
 	productTarget := &model.Product{}
@@ -149,6 +153,7 @@ func GetAllCustomer() []model.Customer {
 		fmt.Println("Error querying database:", err)
 		return nil
 	}
+	defer db.Close()
 	defer customers.Close()
 
 	customerList := []model.Customer{}
@@ -164,5 +169,17 @@ func GetAllCustomer() []model.Customer {
 	}
 
 	return customerList
+
+}
+
+func InsertCustomer(customer model.Customer) {
+	db := DatebaseInit()
+
+	insert, err := db.Query("INSERT INTO warehouse.customer (idcustomer, name) VALUES (?, ?)", customer.ID, customer.CustomerName)
+	if err != nil {
+		fmt.Println("Error at insert customer", err.Error())
+	}
+	defer db.Close()
+	defer insert.Close()
 
 }
