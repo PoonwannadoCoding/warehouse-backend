@@ -37,6 +37,17 @@ func DatebaseInit() *sql.DB {
 	return db
 }
 
+func InsertProduct(product model.Product) {
+	db := DatebaseInit()
+
+	insert, err := db.Query("INSERT INTO warehouse.product (idproduct, product_name, category, price, amount) VALUES (?, ?, ?, ?, ?)", product.ID, product.Title, product.Category, product.Price, product.Amount)
+	if err != nil {
+		fmt.Println("Error at insert product", err.Error())
+	}
+	defer insert.Close()
+
+}
+
 func GetAllProduct() []model.Product {
 	db := DatebaseInit()
 	products, err := db.Query("SELECT * FROM warehouse.product")
