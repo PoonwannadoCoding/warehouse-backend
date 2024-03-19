@@ -1,6 +1,7 @@
 package service
 
 import (
+	"fmt"
 	"warehouse/model"
 
 	"github.com/gin-gonic/gin"
@@ -18,6 +19,7 @@ func Init() {
 	app.GET("/order/:id", getOrder)
 	app.POST("/add/product", postProduct)
 	app.POST("/add/customer", postCustomer)
+	app.POST("/add/order", postOrder)
 
 	app.Run()
 
@@ -30,6 +32,21 @@ func respondID(c *gin.Context) {
 	c.JSON(200, gin.H{
 		"message": "hello " + id,
 	})
+}
+
+func postOrder(c *gin.Context) {
+	fmt.Println("GET REQ")
+	var order model.OrderInput
+	if err := c.BindJSON(&order); err != nil {
+		fmt.Println(err.Error())
+		return
+	}
+	InsertOrder(order)
+	c.JSON(
+		200, gin.H{
+			"message": "Done",
+		})
+
 }
 
 func postProduct(c *gin.Context) {

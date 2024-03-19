@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 	"os"
+	"time"
 
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/joho/godotenv"
@@ -40,12 +41,33 @@ func DatebaseInit() *sql.DB {
 func InsertProduct(product model.Product) {
 	db := DatebaseInit()
 
-	insert, err := db.Query("INSERT INTO warehouse.product (idproduct, product_name, category, price, amount) VALUES (?, ?, ?, ?, ?)", product.ID, product.Title, product.Category, product.Price, product.Amount)
+	insert, err := db.Query("INSERT INTO warehouse.product ( product_name, category, price, amount) VALUES ( ?, ?, ?, ?)", product.Title, product.Category, product.Price, product.Amount)
 	if err != nil {
 		fmt.Println("Error at insert product", err.Error())
 	}
 	defer db.Close()
 	defer insert.Close()
+
+}
+
+func InsertOrder(order model.OrderInput) {
+	db := DatebaseInit()
+	currentAmount := GetProduct(order.ProductId)
+	currentTime := time.Now().Format("2006-01-02")
+	theRest := currentAmount.Amount - order.Amount
+	if theRest > 0 {
+		insert, err := db.Query("INSERT INTO warehouse.transaction ( customerid, productid, amount, orderdate) VALUES ( ?, ?, ?, ?)", order.CustomerId, order.ProductId, order.Amount, currentTime)
+		if err != nil {
+			fmt.Println("Error at insert transaction", err.Error())
+		}
+		edit, err := db.Query("UPDATE warehouse.product SET amount=? where idproduct=?", theRest, order.ProductId)
+		if err != nil {
+			fmt.Println("Error at edit amount at product", err.Error())
+		}
+		defer db.Close()
+		defer insert.Close()
+		defer edit.Close()
+	}
 
 }
 
@@ -75,9 +97,9 @@ func GetAllProduct() []model.Product {
 
 }
 
-func GetAllOrder() []model.Order {
+func GetAllOrder() []model.OrderRead {
 	db := DatebaseInit()
-	results, err := db.Query("SELECT warehouse.transaction.idtransaction, warehouse.product.product_name, warehouse.customer.name, warehouse.transaction.amount FROM warehouse.transaction INNER JOIN customer ON transaction.customerid = customer.idcustomer INNER JOIN product ON transaction.productid = product.idproduct")
+	results, err := db.Query("SELECT warehouse.transaction.idtransaction, warehouse.product.product_name, warehouse.customer.name, warehouse.transaction.amount, warehouse.transaction.orderdate FROM warehouse.transaction INNER JOIN customer ON transaction.customerid = customer.idcustomer INNER JOIN product ON transaction.productid = product.idproduct")
 	if err != nil {
 		fmt.Println("Error querying database:", err.Error())
 		return nil
@@ -85,11 +107,11 @@ func GetAllOrder() []model.Order {
 	defer db.Close()
 	defer results.Close()
 
-	orderList := []model.Order{}
+	orderList := []model.OrderRead{}
 
 	for results.Next() {
-		var order model.Order
-		err := results.Scan(&order.ID, &order.ProductName, &order.CustomerName, &order.Amount)
+		var order model.OrderRead
+		err := results.Scan(&order.ID, &order.ProductName, &order.CustomerName, &order.Amount, &order.OrderDate)
 		if err != nil {
 			fmt.Println("Error scanning order ", err.Error())
 			return nil
@@ -99,7 +121,7 @@ func GetAllOrder() []model.Order {
 	return orderList
 }
 
-func GetOrder(id string) *model.Order {
+func GetOrder(id string) *model.OrderRead {
 	db := DatebaseInit()
 	results, err := db.Query("SELECT warehouse.transaction.idtransaction, warehouse.product.product_name, warehouse.customer.name, warehouse.transaction.amount FROM warehouse.transaction INNER JOIN customer ON transaction.customerid = customer.idcustomer INNER JOIN product ON transaction.productid = product.idproduct where idtransaction=?", id)
 	if err != nil {
@@ -109,7 +131,7 @@ func GetOrder(id string) *model.Order {
 	defer db.Close()
 	defer results.Close()
 
-	order := &model.Order{}
+	order := &model.OrderRead{}
 
 	if results.Next() {
 		err := results.Scan(&order.ID, &order.ProductName, &order.CustomerName, &order.Amount)
@@ -175,7 +197,7 @@ func GetAllCustomer() []model.Customer {
 func InsertCustomer(customer model.Customer) {
 	db := DatebaseInit()
 
-	insert, err := db.Query("INSERT INTO warehouse.customer (idcustomer, name) VALUES (?, ?)", customer.ID, customer.CustomerName)
+	insert, err := db.Query("INSERT INTO warehouse.customer ( name) VALUES (?)", customer.CustomerName)
 	if err != nil {
 		fmt.Println("Error at insert customer", err.Error())
 	}
